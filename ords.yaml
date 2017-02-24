@@ -3,9 +3,8 @@ Description: >
   Create an RDS instance using the Oracle engine
 
 Parameters:
-  Subnets:
-    Description: Subnets to include in the DB subnet group
-    Type: CommaDelimitedList
+  NetworkStack:
+    Type: String
 
   InstanceType:
     Description: RDS instance type
@@ -21,5 +20,20 @@ Resources:
     Type: AWS::RDS::DBSubnetGroup 
     Properties:
         DBSubnetGroupDescription: !Sub "DB subnet group for ${AWS::StackName}"
-        SubnetIds: !Ref Subnets
+        SubnetIds:
+        - Fn::ImportValue: !Sub "${NetworkStack}-PrivateSubnet1"
+        - Fn::ImportValue: !Sub "${NetworkStack}-PrivateSubnet2"
     
+  DBMaintSecurityGroup:
+    Type: AWS::EC2::SecurityGroup
+    Properties:
+      GroupDescription: SSH access to a bastion host to connect to db
+      VpcId:
+        Fn::ImportValue: !Sub "${NetworkStack}-VPCID"
+      SecurityGroupIngress:
+        IpProtocol: tcp
+        FromPort: 22
+        ToPort: 22
+        CidrIp: 0.0.0.0/0
+
+ 
