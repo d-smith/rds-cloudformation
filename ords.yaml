@@ -45,14 +45,14 @@ Resources:
       EC2VpcId: 
         Fn::ImportValue: !Sub "${NetworkStack}-VPCID"
       DBSecurityGroupIngress:
-        EC2SecurityGroupName:
-          Ref: DBMaintSecurityGroup
+        EC2SecurityGroupId:
+          Fn::GetAtt: [ "DBMaintSecurityGroup", "GroupId" ] 
       GroupDescription: "Maintenance Access"
 
-#  IngressFromAppServer:
-#      Type: AWS::RDS::DBSecurityGroupIngress
-#      Properties:
-#        EC2SecurityGroupId: 
-#            Fn::ImportValue: !Sub "${AppServerStack}-AppServerSecurityGroupID"
-#       DBSecurityGroupName:
-#            Ref: DBSecurityGroup
+  IngressFromAppServer:
+      Type: AWS::RDS::DBSecurityGroupIngress
+      Properties:
+        EC2SecurityGroupId: 
+            Fn::ImportValue: !Sub "${AppServerStack}-AppServerSecurityGroupID"
+       DBSecurityGroupName:
+            Ref: DBSecurityGroup
