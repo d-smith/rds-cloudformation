@@ -6,6 +6,9 @@ Parameters:
   NetworkStack:
     Type: String
 
+  AppServerStack:
+    Type: String
+
   InstanceType:
     Description: RDS instance type
     Type: String
@@ -23,7 +26,7 @@ Resources:
         SubnetIds:
         - Fn::ImportValue: !Sub "${NetworkStack}-PrivateSubnet1"
         - Fn::ImportValue: !Sub "${NetworkStack}-PrivateSubnet2"
-    
+
   DBMaintSecurityGroup:
     Type: AWS::EC2::SecurityGroup
     Properties:
@@ -36,4 +39,20 @@ Resources:
         ToPort: 22
         CidrIp: 0.0.0.0/0
 
- 
+  DBSecurityGroup:
+    Type: AWS::RDS::DBSecurityGroup
+    Properties:
+      EC2VpcId: 
+        Fn::ImportValue: !Sub "${NetworkStack}-VPCID"
+      DBSecurityGroupIngress:
+        EC2SecurityGroupName:
+          Ref: DBMaintSecurityGroup
+      GroupDescription: "Maintenance Access"
+
+#  IngressFromAppServer:
+#      Type: AWS::RDS::DBSecurityGroupIngress
+#      Properties:
+#        EC2SecurityGroupId: 
+#            Fn::ImportValue: !Sub "${AppServerStack}-AppServerSecurityGroupID"
+#       DBSecurityGroupName:
+#            Ref: DBSecurityGroup
