@@ -1,0 +1,25 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Description: >
+  Create an RDS instance using the Oracle engine
+
+Parameters:
+  Subnets:
+    Description: Subnets to include in the DB subnet group
+    Type: CommaDelimitedList
+
+  InstanceType:
+    Description: RDS instance type
+    Type: String
+    Default: db.t2.micro
+    AllowedValues: [db.t2.micro, db.t2.small, db.t2.medium, db.t2.large, 
+      db.m4.large, db.m4.xlarge, db.m4.2xlarge, db.m4.4xlarge, db.m4.10xlarge]
+    ConstraintDescription: Please choose a valid instance type.
+
+Resources:
+
+  DBSubnetGroup:
+    Type: AWS::RDS::DBSubnetGroup 
+    Properties:
+        DBSubnetGroupDescription: !Sub "DB subnet group for ${AWS::StackName}"
+        SubnetIds: !Ref Subnets
+    
