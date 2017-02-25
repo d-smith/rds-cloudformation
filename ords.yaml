@@ -17,7 +17,44 @@ Parameters:
       db.m4.large, db.m4.xlarge, db.m4.2xlarge, db.m4.4xlarge, db.m4.10xlarge]
     ConstraintDescription: Please choose a valid instance type.
 
+  DBName:
+    Type: String
+
+  DBAllocatedStorage:
+    Type: String
+
+  DBUser:
+    Type: String
+
+  DBPassword:
+    Type: String
+
 Resources:
+
+  MyDB: 
+    Type: "AWS::RDS::DBInstance"
+    Properties: 
+      DBName: 
+        Ref: "DBName"
+      AllocatedStorage: 
+        Ref: "DBAllocatedStorage"
+      DBInstanceClass: 
+        Ref: "InstanceType"
+      Engine: oracle-se2
+      EngineVersion: 12.1.0.2.v6
+      MasterUsername: 
+        Ref: "DBUser"
+      MasterUserPassword: 
+        Ref: "DBPassword"
+      LicenseModel: license-included
+      BackupRetentionPeriod: 30
+      DBSecurityGroups:
+      - Ref: DBSecurityGroup
+      DBSubnetGroupName:
+        Ref: DBSubnetGroup
+      MultiAZ: True
+      Port: 1521
+
 
   DBSubnetGroup:
     Type: AWS::RDS::DBSubnetGroup 
@@ -53,6 +90,6 @@ Resources:
       Type: AWS::RDS::DBSecurityGroupIngress
       Properties:
         EC2SecurityGroupId: 
-            Fn::ImportValue: !Sub "${AppServerStack}-AppServerSecurityGroupID"
-       DBSecurityGroupName:
-            Ref: DBSecurityGroup
+          Fn::ImportValue: !Sub "${AppServerStack}-AppServerSecurityGroupID"
+        DBSecurityGroupName:
+          Ref: DBSecurityGroup
