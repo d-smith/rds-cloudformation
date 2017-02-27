@@ -6,8 +6,11 @@ Parameters:
   NetworkStack:
     Type: String
 
-  AppServerSecurityGroupId:
+  DBStack:
     Type: String
+
+  KeyName:
+    Type: AWS::EC2::KeyPair::KeyName
 
   InstanceType:
     Description: EC2 instance type
@@ -47,8 +50,9 @@ Resources:
     Properties:
       ImageId: !FindInMap [AWSRegionToAMI, !Ref 'AWS::Region', AMIID]
       InstanceType: !Ref InstanceType
+      KeyName: !Ref KeyName
       SecurityGroupIds:
-        - !Ref AppServerSecurityGroupId
+        - Fn::ImportValue: !Sub "${DBStack}-DBMaintSecurityGroup"
       SubnetId: 
         Fn::ImportValue: !Sub "${NetworkStack}-PublicSubnet1"
       UserData:
@@ -58,4 +62,13 @@ Resources:
           yum install -y docker
           yum install -y git 
           service docker start
-        
+      Tags:
+        -
+          Key: Name
+          Value: !Sub "db main - ${AWS::StackName}"   
+
+Outputs:
+  DBMaintHostAddress:
+    Value: !GetAtt MaintHost.PublicDnsName
+    Export:
+      Name: !Sub "${AWS::StackName}-PublicIpAddress"

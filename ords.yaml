@@ -97,3 +97,10 @@ Resources:
           AppServerSecurityGroupId
         DBSecurityGroupName:
           Ref: DBSecurityGroup
+
+Outputs:
+  DBMaintSecurityGroup:
+    Description: DBMaintSecurityGroup security group id
+    Value: !GetAtt DBMaintSecurityGroup.GroupId
+    Export:
+      Name: !Sub "${AWS::StackName}-DBMaintSecurityGroup"
