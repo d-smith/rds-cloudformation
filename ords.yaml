@@ -6,7 +6,7 @@ Parameters:
   NetworkStack:
     Type: String
 
-  AppServerStack:
+  AppServerSecurityGroupId:
     Type: String
 
   InstanceType:
@@ -28,6 +28,9 @@ Parameters:
 
   DBPassword:
     Type: String
+
+Conditions:
+  WantsAppServerIngress: !Not [!Equals [!Ref AppServerSecurityGroupId, '']]
 
 Resources:
 
@@ -88,8 +91,9 @@ Resources:
 
   IngressFromAppServer:
       Type: AWS::RDS::DBSecurityGroupIngress
+      Condition: WantsAppServerIngress
       Properties:
         EC2SecurityGroupId: 
-          Fn::ImportValue: !Sub "${AppServerStack}-AppServerSecurityGroupID"
+          AppServerSecurityGroupId
         DBSecurityGroupName:
           Ref: DBSecurityGroup
