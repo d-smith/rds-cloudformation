@@ -3,10 +3,9 @@ Description: >
   Create an RDS instance using the Oracle engine
 
 Parameters:
-  NetworkStack:
-    Type: String
 
   AppServerSecurityGroupId:
+    Description: Option app server security group id to allow ingres to db security group
     Type: String
 
   InstanceType:
@@ -21,12 +20,22 @@ Parameters:
     Type: String
 
   DBAllocatedStorage:
+    Description: DB storage allocation, GB
     Type: String
 
   DBUser:
     Type: String
 
   DBPassword:
+    Type: String
+
+  PrivateSubnet1:
+    Type: String
+
+  PrivateSubnet2:
+    Type: String
+
+  VpcId:
     Type: String
 
 Conditions:
@@ -64,15 +73,15 @@ Resources:
     Properties:
         DBSubnetGroupDescription: !Sub "DB subnet group for ${AWS::StackName}"
         SubnetIds:
-        - Fn::ImportValue: !Sub "${NetworkStack}-PrivateSubnet1"
-        - Fn::ImportValue: !Sub "${NetworkStack}-PrivateSubnet2"
+        - !Ref PrivateSubnet1
+        - !Ref PrivateSubnet2
 
   DBMaintSecurityGroup:
     Type: AWS::EC2::SecurityGroup
     Properties:
       GroupDescription: SSH access to a bastion host to connect to db
       VpcId:
-        Fn::ImportValue: !Sub "${NetworkStack}-VPCID"
+        !Ref VpcId
       SecurityGroupIngress:
         IpProtocol: tcp
         FromPort: 22
@@ -83,7 +92,7 @@ Resources:
     Type: AWS::RDS::DBSecurityGroup
     Properties:
       EC2VpcId: 
-        Fn::ImportValue: !Sub "${NetworkStack}-VPCID"
+        !Ref VpcId
       DBSecurityGroupIngress:
         EC2SecurityGroupId:
           Fn::GetAtt: [ "DBMaintSecurityGroup", "GroupId" ] 
@@ -94,7 +103,7 @@ Resources:
       Condition: WantsAppServerIngress
       Properties:
         EC2SecurityGroupId: 
-          AppServerSecurityGroupId
+          !Ref AppServerSecurityGroupId
         DBSecurityGroupName:
           Ref: DBSecurityGroup
 
