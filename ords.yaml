@@ -149,3 +149,37 @@ Outputs:
     Value: !GetAtt DBMaintSecurityGroup.GroupId
     Export:
       Name: !Sub "${AWS::StackName}-DBMaintSecurityGroup"
+
+  DBInstanceIdentifier:
+    Value: 
+      !If 
+        - CreateFromSnapshot  
+        - !Ref MyDBFromSnapshot
+        - !Ref MyDB
+    Export:
+      Name: !Sub "${AWS::StackName}-DBInstanceID"
+
+    
+  DBHostName:
+    Value:
+      !If
+        - CreateFromSnapshot  
+        - !GetAtt MyDBFromSnapshot.Endpoint.Address
+        - !GetAtt MyDB.Endpoint.Address
+    Export:
+      Name: !Sub "${AWS::StackName}-DBHostName"
+
+  DBPort:
+    Value:
+      !If
+        - CreateFromSnapshot  
+        - !GetAtt MyDBFromSnapshot.Endpoint.Port
+        - !GetAtt MyDB.Endpoint.Port
+    Export:
+      Name: !Sub "${AWS::StackName}-DBPort"
+
+  DBService:
+    Value: !Ref DBName
+    Export:
+      Name: !Sub "${AWS::StackName}-DBName"
+      
