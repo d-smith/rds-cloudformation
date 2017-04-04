@@ -38,13 +38,20 @@ Parameters:
   VpcId:
     Type: String
 
+  DBSnapshot:
+    Default: ''
+    Type: String
+
 Conditions:
   WantsAppServerIngress: !Not [!Equals [!Ref AppServerSecurityGroupId, '']]
+  CreateFromSnapshot: !Not [!Equals [!Ref DBSnapshot, '']]
+  CreateFromScratch: !Equals [!Ref DBSnapshot, '']
 
 Resources:
 
   MyDB: 
     Type: "AWS::RDS::DBInstance"
+    Condition: CreateFromScratch
     Properties: 
       DBName: 
         Ref: "DBName"
@@ -69,6 +76,33 @@ Resources:
       PreferredMaintenanceWindow: Tue:07:00-Tue:07:30
       PreferredBackupWindow: 06:00-06:30
 
+  MyDBFromSnapshot: 
+    Type: "AWS::RDS::DBInstance"
+    Condition: CreateFromSnapshot
+    Properties: 
+      DBName: 
+        Ref: "DBName"
+      AllocatedStorage: 
+        Ref: "DBAllocatedStorage"
+      DBInstanceClass: 
+        Ref: "InstanceType"
+      Engine: oracle-se2
+      EngineVersion: 12.1.0.2.v6
+      MasterUsername: 
+        Ref: "DBUser"
+      MasterUserPassword: 
+        Ref: "DBPassword"
+      LicenseModel: license-included
+      BackupRetentionPeriod: 30
+      DBSecurityGroups:
+      - Ref: DBSecurityGroup
+      DBSubnetGroupName:
+        Ref: DBSubnetGroup
+      MultiAZ: True
+      Port: 1521
+      PreferredMaintenanceWindow: Tue:07:00-Tue:07:30
+      PreferredBackupWindow: 06:00-06:30
+      DBSnapshotIdentifier: !Ref DBSnapshot
 
   DBSubnetGroup:
     Type: AWS::RDS::DBSubnetGroup 
