@@ -66,6 +66,8 @@ Resources:
         Ref: DBSubnetGroup
       MultiAZ: True
       Port: 1521
+      PreferredMaintenanceWindow: Tue:07:00-Tue:07:30
+      PreferredBackupWindow: 06:00-06:30
 
 
   DBSubnetGroup:
