@@ -66,11 +66,9 @@ Resources:
         Ref: "DBPassword"
       LicenseModel: license-included
       BackupRetentionPeriod: 30
-#      DBSecurityGroups:
-#      - Ref: DBSecurityGroup
       VPCSecurityGroups:
-      - Ref: DBMaintSecurityGroup
-      - Ref: AppServerSecurityGroupId
+      - Ref: DBMaintConnectionSG
+      - Ref: AppServerConnectionSG
       DBSubnetGroupName:
         Ref: DBSubnetGroup
       MultiAZ: True
@@ -96,11 +94,9 @@ Resources:
         Ref: "DBPassword"
       LicenseModel: license-included
       BackupRetentionPeriod: 30
- #     DBSecurityGroups:
- #     - Ref: DBSecurityGroup
       VPCSecurityGroups:
-      - Ref: DBMaintSecurityGroup
-      - Ref: AppServerSecurityGroupId
+      - Ref: DBMaintConnectionSG
+      - Ref: AppServerConnectionSG
       DBSubnetGroupName:
         Ref: DBSubnetGroup
       MultiAZ: True
@@ -129,31 +125,31 @@ Resources:
         ToPort: 22
         CidrIp: 0.0.0.0/0
 
-#  DBSecurityGroup:
-#    Type: AWS::RDS::DBSecurityGroup
-#    Properties:
-#      EC2VpcId: 
-#        !Ref VpcId
-#      DBSecurityGroupIngress:
-#        EC2SecurityGroupId:
-#          Fn::GetAtt: [ "DBMaintSecurityGroup", "GroupId" ] 
-#      GroupDescription: "Maintenance Access"
+  AppServerConnectionSG:
+    Type: AWS::EC2::SecurityGroup
+    Properties:
+      GroupDescription: Database port access from app security group
+      VpcId:
+        !Ref VpcId
+      SecurityGroupIngress:
+        IpProtocol: tcp
+        FromPort: 1521
+        ToPort: 1521
+        SourceSecurityGroupId: !Ref AppServerSecurityGroupId
 
-#  IngressFromAppServer:
-#      Type: AWS::RDS::DBSecurityGroupIngress
-#      Condition: WantsAppServerIngress
-#      Properties:
-#        EC2SecurityGroupId: 
-#          !Ref AppServerSecurityGroupId
-#        DBSecurityGroupName:
-#          Ref: DBSecurityGroup
+  DBMaintConnectionSG:
+    Type: AWS::EC2::SecurityGroup
+    Properties:
+      GroupDescription: Database port access from db bastion host security group
+      VpcId:
+        !Ref VpcId
+      SecurityGroupIngress:
+        IpProtocol: tcp
+        FromPort: 1521
+        ToPort: 1521
+        SourceSecurityGroupId: !Ref DBMaintSecurityGroup
 
 Outputs:
-  DBMaintSecurityGroup:
-    Description: DBMaintSecurityGroup security group id
-    Value: !GetAtt DBMaintSecurityGroup.GroupId
-    Export:
-      Name: !Sub "${AWS::StackName}-DBMaintSecurityGroup"
 
   DBInstanceIdentifier:
     Value: 
