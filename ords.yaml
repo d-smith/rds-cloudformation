@@ -5,7 +5,7 @@ Description: >
 Parameters:
 
   AppServerSecurityGroupId:
-    Description: Option app server security group id to allow ingres to db security group
+    Description: Security group app servers run with
     Type: String
 
   InstanceType:
@@ -43,7 +43,6 @@ Parameters:
     Type: String
 
 Conditions:
-  WantsAppServerIngress: !Not [!Equals [!Ref AppServerSecurityGroupId, '']]
   CreateFromSnapshot: !Not [!Equals [!Ref DBSnapshot, '']]
   CreateFromScratch: !Equals [!Ref DBSnapshot, '']
 
@@ -67,8 +66,11 @@ Resources:
         Ref: "DBPassword"
       LicenseModel: license-included
       BackupRetentionPeriod: 30
-      DBSecurityGroups:
-      - Ref: DBSecurityGroup
+#      DBSecurityGroups:
+#      - Ref: DBSecurityGroup
+      VPCSecurityGroups:
+      - Ref: DBMaintSecurityGroup
+      - Ref: AppServerSecurityGroupId
       DBSubnetGroupName:
         Ref: DBSubnetGroup
       MultiAZ: True
@@ -94,8 +96,11 @@ Resources:
         Ref: "DBPassword"
       LicenseModel: license-included
       BackupRetentionPeriod: 30
-      DBSecurityGroups:
-      - Ref: DBSecurityGroup
+ #     DBSecurityGroups:
+ #     - Ref: DBSecurityGroup
+      VPCSecurityGroups:
+      - Ref: DBMaintSecurityGroup
+      - Ref: AppServerSecurityGroupId
       DBSubnetGroupName:
         Ref: DBSubnetGroup
       MultiAZ: True
@@ -124,24 +129,24 @@ Resources:
         ToPort: 22
         CidrIp: 0.0.0.0/0
 
-  DBSecurityGroup:
-    Type: AWS::RDS::DBSecurityGroup
-    Properties:
-      EC2VpcId: 
-        !Ref VpcId
-      DBSecurityGroupIngress:
-        EC2SecurityGroupId:
-          Fn::GetAtt: [ "DBMaintSecurityGroup", "GroupId" ] 
-      GroupDescription: "Maintenance Access"
+#  DBSecurityGroup:
+#    Type: AWS::RDS::DBSecurityGroup
+#    Properties:
+#      EC2VpcId: 
+#        !Ref VpcId
+#      DBSecurityGroupIngress:
+#        EC2SecurityGroupId:
+#          Fn::GetAtt: [ "DBMaintSecurityGroup", "GroupId" ] 
+#      GroupDescription: "Maintenance Access"
 
-  IngressFromAppServer:
-      Type: AWS::RDS::DBSecurityGroupIngress
-      Condition: WantsAppServerIngress
-      Properties:
-        EC2SecurityGroupId: 
-          !Ref AppServerSecurityGroupId
-        DBSecurityGroupName:
-          Ref: DBSecurityGroup
+#  IngressFromAppServer:
+#      Type: AWS::RDS::DBSecurityGroupIngress
+#      Condition: WantsAppServerIngress
+#      Properties:
+#        EC2SecurityGroupId: 
+#          !Ref AppServerSecurityGroupId
+#        DBSecurityGroupName:
+#          Ref: DBSecurityGroup
 
 Outputs:
   DBMaintSecurityGroup:
