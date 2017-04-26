@@ -1,0 +1,186 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Description: >
+  Create an RDS instance using the Postgres engine
+
+Parameters:
+
+  AppServerSecurityGroupId:
+    Description: Security group app servers run with
+    Type: String
+
+  InstanceType:
+    Description: RDS instance type
+    Type: String
+    Default: db.t2.micro
+    AllowedValues: [db.t2.micro, db.t2.small, db.t2.medium, db.t2.large, 
+      db.m4.large, db.m4.xlarge, db.m4.2xlarge, db.m4.4xlarge, db.m4.10xlarge]
+    ConstraintDescription: Please choose a valid instance type.
+
+  DBName:
+    Type: String
+
+  DBAllocatedStorage:
+    Description: DB storage allocation, GB
+    Type: String
+
+  DBUser:
+    Type: String
+
+  DBPassword:
+    Type: String
+
+  PrivateSubnet1:
+    Type: String
+
+  PrivateSubnet2:
+    Type: String
+
+  VpcId:
+    Type: String
+
+  DBSnapshot:
+    Default: ''
+    Type: String
+
+Conditions:
+  CreateFromSnapshot: !Not [!Equals [!Ref DBSnapshot, '']]
+  CreateFromScratch: !Equals [!Ref DBSnapshot, '']
+
+Resources:
+
+  MyDB: 
+    Type: "AWS::RDS::DBInstance"
+    Condition: CreateFromScratch
+    Properties: 
+      DBName: 
+        Ref: "DBName"
+      AllocatedStorage: 
+        Ref: "DBAllocatedStorage"
+      DBInstanceClass: 
+        Ref: "InstanceType"
+      Engine: postgres
+      EngineVersion: 9.6.1
+      MasterUsername: 
+        Ref: "DBUser"
+      MasterUserPassword: 
+        Ref: "DBPassword"
+      LicenseModel: postgresql-license
+      BackupRetentionPeriod: 7
+      VPCSecurityGroups:
+      - Ref: DBMaintConnectionSG
+      - Ref: AppServerConnectionSG
+      DBSubnetGroupName:
+        Ref: DBSubnetGroup
+      MultiAZ: True
+      Port: 5432
+      PreferredMaintenanceWindow: Tue:07:00-Tue:07:30
+      PreferredBackupWindow: 06:00-06:30
+
+  MyDBFromSnapshot: 
+    Type: "AWS::RDS::DBInstance"
+    Condition: CreateFromSnapshot
+    Properties: 
+      DBName: 
+        Ref: "DBName"
+      AllocatedStorage: 
+        Ref: "DBAllocatedStorage"
+      DBInstanceClass: 
+        Ref: "InstanceType"
+      Engine: postgres
+      EngineVersion: 9.6.1
+      MasterUsername: 
+        Ref: "DBUser"
+      MasterUserPassword: 
+        Ref: "DBPassword"
+      LicenseModel: postgresql-license
+      BackupRetentionPeriod: 7
+      VPCSecurityGroups:
+      - Ref: DBMaintConnectionSG
+      - Ref: AppServerConnectionSG
+      DBSubnetGroupName:
+        Ref: DBSubnetGroup
+      MultiAZ: True
+      Port: 5432
+      PreferredMaintenanceWindow: Tue:07:00-Tue:07:30
+      PreferredBackupWindow: 06:00-06:30
+      DBSnapshotIdentifier: !Ref DBSnapshot
+
+  DBSubnetGroup:
+    Type: AWS::RDS::DBSubnetGroup 
+    Properties:
+        DBSubnetGroupDescription: !Sub "DB subnet group for ${AWS::StackName}"
+        SubnetIds:
+        - !Ref PrivateSubnet1
+        - !Ref PrivateSubnet2
+
+  DBMaintSecurityGroup:
+    Type: AWS::EC2::SecurityGroup
+    Properties:
+      GroupDescription: SSH access to a bastion host to connect to db
+      VpcId:
+        !Ref VpcId
+      SecurityGroupIngress:
+        IpProtocol: tcp
+        FromPort: 22
+        ToPort: 22
+        CidrIp: 0.0.0.0/0
+
+  AppServerConnectionSG:
+    Type: AWS::EC2::SecurityGroup
+    Properties:
+      GroupDescription: Database port access from app security group
+      VpcId:
+        !Ref VpcId
+      SecurityGroupIngress:
+        IpProtocol: tcp
+        FromPort: 5432
+        ToPort: 5432
+        SourceSecurityGroupId: !Ref AppServerSecurityGroupId
+
+  DBMaintConnectionSG:
+    Type: AWS::EC2::SecurityGroup
+    Properties:
+      GroupDescription: Database port access from db bastion host security group
+      VpcId:
+        !Ref VpcId
+      SecurityGroupIngress:
+        IpProtocol: tcp
+        FromPort: 5432
+        ToPort: 5432
+        SourceSecurityGroupId: !Ref DBMaintSecurityGroup
+
+Outputs:
+
+  DBInstanceIdentifier:
+    Value: 
+      !If 
+        - CreateFromSnapshot  
+        - !Ref MyDBFromSnapshot
+        - !Ref MyDB
+    Export:
+      Name: !Sub "${AWS::StackName}-DBInstanceID"
+
+    
+  DBHostName:
+    Value:
+      !If
+        - CreateFromSnapshot  
+        - !GetAtt MyDBFromSnapshot.Endpoint.Address
+        - !GetAtt MyDB.Endpoint.Address
+    Export:
+      Name: !Sub "${AWS::StackName}-DBHostName"
+
+  DBPort:
+    Value:
+      !If
+        - CreateFromSnapshot  
+        - !GetAtt MyDBFromSnapshot.Endpoint.Port
+        - !GetAtt MyDB.Endpoint.Port
+    Export:
+      Name: !Sub "${AWS::StackName}-DBPort"
+
+  DBService:
+    Value: !Ref DBName
+    Export:
+      Name: !Sub "${AWS::StackName}-DBName"
+      
